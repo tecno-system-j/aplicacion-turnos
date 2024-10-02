@@ -1,30 +1,14 @@
-
 const jwt = require('jsonwebtoken');
 
-const protect = (req, res, next) => {
-  let token;
+module.exports = (req, res, next) => {
+  const token = req.header('Authorization');
+  if (!token) return res.status(401).json({ msg: 'No autorizado' });
 
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-    try {
-      token = req.headers.authorization.split(' ')[1];
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      req.user = decoded;
-      next();
-    } catch (error) {
-      return res.status(401).json({ message: 'No autorizado, token fallido' });
-    }
-  }
-
-  if (!token) {
-    return res.status(401).json({ message: 'No autorizado, no hay token' });
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded.id;
+    next();
+  } catch (error) {
+    res.status(401).json({ msg: 'Token no válido' });
   }
 };
-
-const admin = (req, res, next) => {
-  if (req.user.role !== 'admin') {
-    return res.status(403).json({ message: 'Acceso denegado: Solo administradores' });
-  }
-  next();
-};
-
-module.exports = { protect, admin };
